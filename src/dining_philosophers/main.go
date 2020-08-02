@@ -36,9 +36,9 @@ func main() {
  	}
  	philosophers := make([]*Philosopher,5)
 	for i := 0; i < 5; i++ {
-		philosophers = &Philosopher{
+		philosophers[i] = &Philosopher{
 			leftChopstick: chopsticks[i],
-			rightChopstick: chopsticks[(i+1)%5]
+			rightChopstick: chopsticks[(i+1)%5],
 		}
 	}
 }
