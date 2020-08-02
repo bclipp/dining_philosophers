@@ -1,8 +1,9 @@
-package dining_philosophers
+package main
 
 import (
 	"fmt"
 	"sync"
+	"time"
 )
 
 //each chopstick a mutex
@@ -13,32 +14,40 @@ type Chopstick struct {sync.Mutex}
 
 type Philosopher struct {
 	leftChopstick, rightChopstick *Chopstick
+	id  int
 }
 
 func (p Philosopher) eat() {
-	for {
+	for i := 0; i < 3; i++ {
 		p.leftChopstick.Lock()
 		p.rightChopstick.Lock()
-
-		fmt.Print("eating")
-
+		fmt.Printf("Philosopher #%d is starting to eat.\n", p.id+1)
 		p.rightChopstick.Unlock()
 		p.leftChopstick.Unlock()
-
+		fmt.Printf("Philosopher #%d is finished eating.\n", p.id+1)
+		time.Sleep(2*time.Second)
+		eatingWaitGroup.Done()
 	}
 }
 
-func main() {
+var eatingWaitGroup sync.WaitGroup
 
-	chopsticks := make([]*Chopstick,5)
+
+func main() {
+	counter := 5
+	chopsticks := make([]*Chopstick,counter)
 	for i := 0; i < 5; i++ {
 		chopsticks[i] = new(Chopstick)
  	}
  	philosophers := make([]*Philosopher,5)
-	for i := 0; i < 5; i++ {
+	for i := 0; i < counter; i++ {
 		philosophers[i] = &Philosopher{
 			leftChopstick: chopsticks[i],
-			rightChopstick: chopsticks[(i+1)%5],
+			rightChopstick: chopsticks[(i+1)%counter],
+			id: i,
 		}
+		eatingWaitGroup.Add(1)
+		go philosophers[i].eat()
 	}
+	eatingWaitGroup.Wait()
 }
