@@ -3,7 +3,6 @@ package main
 import (
 	"fmt"
 	"sync"
-	"time"
 )
 
 //each chopstick a mutex
@@ -17,15 +16,20 @@ type Philosopher struct {
 	id  int
 }
 
-func (p Philosopher) eat() {
+func (p Philosopher) eat(startChannel chan bool,eatChannel chan int) {
 	for i := 0; i < 3; i++ {
+		start := false
+		for start != false {
+			eatChannel <- p.id
+			start = <- startChannel
+		}
 		p.leftChopstick.Lock()
 		p.rightChopstick.Lock()
 		fmt.Printf("Philosopher #%d is starting to eat.\n", p.id+1)
 		p.rightChopstick.Unlock()
 		p.leftChopstick.Unlock()
 		fmt.Printf("Philosopher #%d is finished eating.\n", p.id+1)
-		time.Sleep(2*time.Second)
+		//time.Sleep(2*time.Second)
 		eatingWaitGroup.Done()
 	}
 }
@@ -36,8 +40,12 @@ var eatingWaitGroup sync.WaitGroup
 func main() {
 	counter := 5
 	chopsticks := make([]*Chopstick,counter)
+
+	eatChannel := make(chan int)
+	var startChannels []chan bool
 	for i := 0; i < 5; i++ {
 		chopsticks[i] = new(Chopstick)
+		startChannels[i] = make(chan bool)
  	}
  	philosophers := make([]*Philosopher,5)
 	for i := 0; i < counter; i++ {
@@ -47,7 +55,21 @@ func main() {
 			id: i,
 		}
 		eatingWaitGroup.Add(1)
-		go philosophers[i].eat()
+		go philosophers[i].eat(
+			startChannels[i],
+			eatChannel,
+			)
 	}
+	eaters := 0
+
+	for range eatChannel {
+		if eaters <= 2 {
+			eater := <- eatChannel
+			eaters++
+			startChannels[eater] <- true
+		}
+
+	}
+
 	eatingWaitGroup.Wait()
 }
