@@ -1,3 +1,5 @@
+![Go](https://github.com/bclipp/dining_philosophers/workflows/Go/badge.svg)  
+
 ### Dining Philosopher's
 
 [Dining philosphers problem](https://en.wikipedia.org/wiki/Dining_philosophers_problem)
