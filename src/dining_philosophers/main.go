@@ -19,7 +19,7 @@ type Philosopher struct {
 func (p Philosopher) eat(startChannel chan bool,eatChannel chan int) {
 	for i := 0; i < 3; i++ {
 		start := false
-		for start != false {
+		for !start {
 			eatChannel <- p.id
 			start = <- startChannel
 		}
