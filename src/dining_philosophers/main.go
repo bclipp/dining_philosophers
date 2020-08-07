@@ -5,24 +5,23 @@ import (
 	"sync"
 )
 
-//each chopstick a mutex
-//each phil is a go ruitine
-//each is associated with 2 chop l/r
-
 type Chopstick struct {sync.Mutex}
 
 type Philosopher struct {
 	leftChopstick, rightChopstick *Chopstick
 	id  int
 }
-
+// eatChannel is used to request the ability to eat, the requester sends the ID
+// startChannel is used to let the eater know they can eat now.
 func (p Philosopher) eat(startChannel chan bool,eatChannel chan int) {
+	start := false
+	// loop is setup to force the eater to wait till its the eater's turn.
+	for !start {
+		eatChannel <- p.id
+		start = <- startChannel
+	}
+	// each eater eats 3 times, but it would be nice to have each time they eat they ask for permission.
 	for i := 0; i < 3; i++ {
-		start := false
-		for !start {
-			eatChannel <- p.id
-			start = <- startChannel
-		}
 		p.leftChopstick.Lock()
 		p.rightChopstick.Lock()
 		fmt.Printf("Philosopher #%d is starting to eat.\n", p.id+1)
@@ -36,13 +35,13 @@ func (p Philosopher) eat(startChannel chan bool,eatChannel chan int) {
 
 var eatingWaitGroup sync.WaitGroup
 
-
 func main() {
 	counter := 5
 	chopsticks := make([]*Chopstick,counter)
-
+	// eatChannel is used to request the ability to eat, the requester sends the ID
 	eatChannel := make(chan int)
-	var startChannels []chan bool
+	// startChannel is used to let the eater know they can eat now.
+	var startChannels [5]chan bool
 	for i := 0; i < 5; i++ {
 		chopsticks[i] = new(Chopstick)
 		startChannels[i] = make(chan bool)
@@ -68,7 +67,6 @@ func main() {
 			eaters++
 			startChannels[eater] <- true
 		}
-
 	}
 
 	eatingWaitGroup.Wait()
