@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 	"sync"
+	"time"
 )
 
 type Chopstick struct {sync.Mutex}
@@ -14,6 +15,7 @@ type Philosopher struct {
 // eatChannel is used to request the ability to eat, the requester sends the ID
 // startChannel is used to let the eater know they can eat now.
 func (p Philosopher) eat(startChannel chan bool,eatChannel chan int) {
+	defer eatingWaitGroup.Done()
 	start := false
 	// loop is setup to force the eater to wait till its the eater's turn.
 	for !start {
@@ -24,13 +26,13 @@ func (p Philosopher) eat(startChannel chan bool,eatChannel chan int) {
 	for i := 0; i < 3; i++ {
 		p.leftChopstick.Lock()
 		p.rightChopstick.Lock()
-		fmt.Printf("Philosopher #%d is starting to eat.\n", p.id+1)
+		fmt.Printf("Philosopher #%d is starting to eat.\n", p.id)
 		p.rightChopstick.Unlock()
 		p.leftChopstick.Unlock()
-		fmt.Printf("Philosopher #%d is finished eating.\n", p.id+1)
-		//time.Sleep(2*time.Second)
-		eatingWaitGroup.Done()
+		fmt.Printf("Philosopher #%d is finished eating.\n", p.id)
+		time.Sleep(2*time.Second)
 	}
+	fmt.Printf("removing eater %d to waitgroup.\n",p.id)
 }
 
 var eatingWaitGroup sync.WaitGroup
@@ -54,20 +56,21 @@ func main() {
 			id: i,
 		}
 		eatingWaitGroup.Add(1)
+		fmt.Printf("adding eater %d to waitgroup.\n waitgroup size:%d \n",i,eatingWaitGroup)
 		go philosophers[i].eat(
 			startChannels[i],
 			eatChannel,
 			)
 	}
-	eaters := 0
 
-	for range eatChannel {
-		if eaters <= 2 {
+	for  eaters := 0; eaters < 5; {
+		fmt.Printf("!!!!!!!!!!!!!!!  eaters: %d \n",eaters)
 			eater := <- eatChannel
 			eaters++
 			startChannels[eater] <- true
-		}
 	}
 
 	eatingWaitGroup.Wait()
+	fmt.Println("Terminating Program")
+
 }
