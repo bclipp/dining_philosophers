@@ -32,7 +32,6 @@ func (p Philosopher) eat(startChannel chan bool,eatChannel chan int) {
 		fmt.Printf("Philosopher #%d is finished eating.\n", p.id)
 		time.Sleep(2*time.Second)
 	}
-	fmt.Printf("removing eater %d to waitgroup.\n",p.id)
 }
 
 var eatingWaitGroup sync.WaitGroup
@@ -56,7 +55,6 @@ func main() {
 			id: i,
 		}
 		eatingWaitGroup.Add(1)
-		fmt.Printf("adding eater %d to waitgroup.\n waitgroup size:%d \n",i,eatingWaitGroup)
 		go philosophers[i].eat(
 			startChannels[i],
 			eatChannel,
@@ -64,13 +62,11 @@ func main() {
 	}
 
 	for  eaters := 0; eaters < 5; {
-		fmt.Printf("!!!!!!!!!!!!!!!  eaters: %d \n",eaters)
 			eater := <- eatChannel
 			eaters++
 			startChannels[eater] <- true
 	}
 
 	eatingWaitGroup.Wait()
-	fmt.Println("Terminating Program")
 
 }
