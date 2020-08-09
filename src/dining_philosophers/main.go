@@ -14,7 +14,7 @@ type Philosopher struct {
 }
 // eatChannel is used to request the ability to eat, the requester sends the ID
 // startChannel is used to let the eater know they can eat now.
-func (p Philosopher) eat(startChannel chan bool,eatChannel chan int) {
+func (p Philosopher) eat(startChannel chan bool,eatChannel chan int, doneChannel chan bool) {
 	defer eatingWaitGroup.Done()
 	start := false
 	// loop is setup to force the eater to wait till its the eater's turn.
@@ -32,6 +32,7 @@ func (p Philosopher) eat(startChannel chan bool,eatChannel chan int) {
 		fmt.Printf("Philosopher #%d is finished eating.\n", p.id)
 		time.Sleep(2*time.Second)
 	}
+	doneChannel <- true
 }
 
 var eatingWaitGroup sync.WaitGroup
@@ -39,6 +40,8 @@ var eatingWaitGroup sync.WaitGroup
 func main() {
 	counter := 5
 	chopsticks := make([]*Chopstick,counter)
+	// doneChannel is used to tell the host the eater is done
+	doneChannel := make(chan bool)
 	// eatChannel is used to request the ability to eat, the requester sends the ID
 	eatChannel := make(chan int)
 	// startChannel is used to let the eater know they can eat now.
@@ -58,13 +61,21 @@ func main() {
 		go philosophers[i].eat(
 			startChannels[i],
 			eatChannel,
+			doneChannel,
 			)
 	}
+	eaters := 0
+	for  i := 0; i < 5; {
 
-	for  eaters := 0; eaters < 5; {
-			eater := <- eatChannel
-			eaters++
+		if eaters < 3 {
+			eater := <-eatChannel
+			i++
 			startChannels[eater] <- true
+		}
+		done := <- doneChannel
+		if done {
+			eaters--
+		}
 	}
 
 	eatingWaitGroup.Wait()
